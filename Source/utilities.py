@@ -299,10 +299,10 @@ def extract_data(args:dict):
     t_star = pd.DataFrame().astype(np.float)
 
     # create empty dictionaries for C, U, V and P
-    C_data = pd.DataFrame().astype(np.float)
-    U_data = pd.DataFrame().astype(np.float)
-    V_data = pd.DataFrame().astype(np.float)
-    P_data = pd.DataFrame().astype(np.float)
+    C_star = pd.DataFrame().astype(np.float)
+    U_star = pd.DataFrame().astype(np.float)
+    V_star = pd.DataFrame().astype(np.float)
+    P_star = pd.DataFrame().astype(np.float)
 
     # get x,y,t data and input into output dictionary
     if len(fileNames) != 0:
@@ -318,25 +318,25 @@ def extract_data(args:dict):
             mesh = meshio.read(file)
 
             # append C, U, V & P from file to column in output
-            C_data.loc[:,it] = np.array(mesh.point_data["Con"])
-            U_data.loc[:,it] = np.array(mesh.point_data["Vel"][:,0]) # note Vel is a dict itself of 3 columns: x, y, z
-            V_data.loc[:,it] = np.array(mesh.point_data["Vel"][:,1])
-            P_data.loc[:,it] = np.array(mesh.point_data["Pres"])
+            C_star.loc[:,it] = np.array(mesh.point_data["Con"])
+            U_star.loc[:,it] = np.array(mesh.point_data["Vel"][:,0]) # note Vel is a dict itself of 3 columns: x, y, z
+            V_star.loc[:,it] = np.array(mesh.point_data["Vel"][:,1])
+            P_star.loc[:,it] = np.array(mesh.point_data["Pres"])
             it += 1
     
     else:
         print("There are no files")
         pass
     
-    # create nested dictionary containing all data
-    data_dict = {
+    # create dictionary containing all data
+    data = {
         "x_star": x_star,
         "y_star": y_star,
         "t_star": t_star,
-        "C_star": C_data,
-        "U_star": U_data,
-        "V_star": V_data,
-        "P_star": P_data
+        "C_star": C_star,
+        "U_star": U_star,
+        "V_star": V_star,
+        "P_star": P_star
     }
 
-    return data_dict
+    return data

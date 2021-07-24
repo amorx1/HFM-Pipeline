@@ -7,6 +7,7 @@ import numpy as np
 import scipy.io
 import time
 import sys
+import os
 
 from utilities import neural_net, Navier_Stokes_2D, \
                       tf_session, mean_squared_error, relative_error, parse_args, extract_data
@@ -150,10 +151,15 @@ class HFM(object):
 
 def main():
 
+    try:
+        os.chdir("DATA")    # FOR TESTING ONLY
+    except:
+        print("Invalid directory")
+
     # get file array
     args = parse_args()
     
-    # pass files array to be read
+    # # pass files array to be read
     data = extract_data(args) # must return a dictionary of the same form as loadmat (for now)
     
     batch_size = 10000
@@ -161,19 +167,19 @@ def main():
     layers = [3] + 10*[4*50] + [4]
     
     # Load Data
-    # data = scipy.io.loadmat('../Data/Cylinder2D_flower.mat')
+    # data = scipy.io.loadmat('DATA/data_final.mat')
     
-    t_star = data['t_star'] # T x 1
-    x_star = data['x_star'] # N x 1
-    y_star = data['y_star'] # N x 1
+    t_star = data['t_star'].to_numpy() # T x 1
+    x_star = data['x_star'].to_numpy() # N x 1
+    y_star = data['y_star'].to_numpy() # N x 1
     
     T = t_star.shape[0]
     N = x_star.shape[0]
         
-    U_star = data['U_star'] # N x T
-    V_star = data['V_star'] # N x T
-    P_star = data['P_star'] # N x T
-    C_star = data['C_star'] # N x T
+    U_star = data['U_star'].to_numpy() # N x T
+    V_star = data['V_star'].to_numpy() # N x T
+    P_star = data['P_star'].to_numpy() # N x T
+    C_star = data['C_star'].to_numpy()# N x T
     
     # Rearrange Data 
     T_star = np.tile(t_star, (1,N)).T # N x T
@@ -184,8 +190,8 @@ def main():
     ######################## Training Data ###############################
     ######################################################################
     
-    T_data = int(sys.argv[1])
-    N_data = int(sys.argv[2])
+    T_data = T 
+    N_data = N 
     idx_t = np.concatenate([np.array([0]), np.random.choice(T-2, T_data-2, replace=False)+1, np.array([T-1])] )
     idx_x = np.random.choice(N, N_data, replace=False)
     t_data = T_star[:, idx_t][idx_x,:].flatten()[:,None]
@@ -200,7 +206,7 @@ def main():
     t_eqns = T_star[:, idx_t][idx_x,:].flatten()[:,None]
     x_eqns = X_star[:, idx_t][idx_x,:].flatten()[:,None]
     y_eqns = Y_star[:, idx_t][idx_x,:].flatten()[:,None]
-        
+    
     # Training
     model = HFM(t_data, x_data, y_data, c_data,
                 t_eqns, x_eqns, y_eqns,
@@ -269,7 +275,7 @@ def main():
         print('Error v: %e' % (error_v))
         print('Error p: %e' % (error_p))
     
-    scipy.io.savemat('../Results/Cylinder2D_flower_results_%d_%d_%s.mat' %(T_data, N_data, time.strftime('%d_%m_%Y')),
+    scipy.io.savemat('../Results/Cylinder2D_flower_results_%s.mat' %(time.strftime('%d_%m_%Y')),
                      {'C_pred':C_pred, 'U_pred':U_pred, 'V_pred':V_pred, 'P_pred':P_pred})
  
 if __name__ == "__main__":

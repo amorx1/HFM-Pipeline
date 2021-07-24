@@ -293,43 +293,50 @@ def extract_data(args:dict):
     fileNames = args["fileNames"]
 
     # create empty dictionary for spatio-temporal data
-    xyt_keys = ["t_star", "x_star", "y_star"]
-    xyt_data = dict.fromkeys(xyt_keys, None)
+
+    x_star = pd.DataFrame().astype(np.float)
+    y_star = pd.DataFrame().astype(np.float)
+    t_star = pd.DataFrame().astype(np.float)
 
     # create empty dictionaries for C, U, V and P
-    C_data = dict.fromkeys(range(251))
-    U_data = dict.fromkeys(range(251))
-    V_data = dict.fromkeys(range(251))
-    P_data = dict.fromkeys(range(251))
+    C_data = pd.DataFrame().astype(np.float)
+    U_data = pd.DataFrame().astype(np.float)
+    V_data = pd.DataFrame().astype(np.float)
+    P_data = pd.DataFrame().astype(np.float)
 
     # get x,y,t data and input into output dictionary
-    mesh = meshio.read(fileNames[1])
-    xyt_data["x_star"] = mesh.points[:,0]
-    xyt_data["y_star"] = mesh.points[:,1]
-    xyt_data["t_star"] = np.linspace(0, 250, num=251)
+    if len(fileNames) != 0:
+        mesh = meshio.read(fileNames[1])
+        x_star.loc[:,1] = np.array(mesh.points[:,0])
+        y_star.loc[:,1] = np.array(mesh.points[:,1])
+        t_star.loc[:,1] = (np.linspace(0, 25, num=251))
 
-    it = 0
-    for file in fileNames:
-        
-        # read file
-        mesh = meshio.read(file)
+        it = 0
+        for file in fileNames:
+            
+            # read file
+            mesh = meshio.read(file)
 
-        # append C, U, V & P from file to column in output
-        C_data[it] = mesh.point_data["Con"]
-        U_data[it] = mesh.point_data["Vel"][:,0] # note Vel is a dict itself of 3 columns: x, y, z
-        V_data[it] = mesh.point_data["Con"][:,1]
-        P_data[it] = mesh.point_data["Pres"]
-        it += 1
+            # append C, U, V & P from file to column in output
+            C_data.loc[:,it] = np.array(mesh.point_data["Con"])
+            U_data.loc[:,it] = np.array(mesh.point_data["Vel"][:,0]) # note Vel is a dict itself of 3 columns: x, y, z
+            V_data.loc[:,it] = np.array(mesh.point_data["Vel"][:,1])
+            P_data.loc[:,it] = np.array(mesh.point_data["Pres"])
+            it += 1
+    
+    else:
+        print("There are no files")
+        pass
     
     # create nested dictionary containing all data
-    data = {
-        "x_star": xyt_data["x_star"],
-        "y_star": xyt_data["y_star"],
-        "t_star": xyt_data["t_star"],
+    data_dict = {
+        "x_star": x_star,
+        "y_star": y_star,
+        "t_star": t_star,
         "C_star": C_data,
         "U_star": U_data,
         "V_star": V_data,
         "P_star": P_data
     }
 
-    return data
+    return data_dict

@@ -9,7 +9,7 @@ import time
 import sys
 
 from utilities import neural_net, Navier_Stokes_2D, \
-                      tf_session, mean_squared_error, relative_error
+                      tf_session, mean_squared_error, relative_error, parse_args, pv2csv
 
 class HFM(object):
     # notational conventions
@@ -149,6 +149,13 @@ class HFM(object):
         return c_star, u_star, v_star, p_star
 
 def main():
+
+    # get registrationName and FileName array
+    args = parse_args()
+    
+    # pass args into paraview
+    # paraview-python script goes in here
+    data = pv2csv(args) # must return a dictionary of the same form as loadmat
     
     batch_size = 10000
     

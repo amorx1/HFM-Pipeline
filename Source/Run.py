@@ -9,7 +9,7 @@ import time
 import sys
 
 from utilities import neural_net, Navier_Stokes_2D, \
-                      tf_session, mean_squared_error, relative_error, parse_args, pv2csv
+                      tf_session, mean_squared_error, relative_error, parse_args, extract_data
 
 class HFM(object):
     # notational conventions
@@ -150,19 +150,18 @@ class HFM(object):
 
 def main():
 
-    # get registrationName and FileName array
+    # get file array
     args = parse_args()
     
-    # pass args into paraview
-    # paraview-python script goes in here
-    data = pv2csv(args) # must return a dictionary of the same form as loadmat
+    # pass files array to be read
+    data = extract_data(args) # must return a dictionary of the same form as loadmat (for now)
     
     batch_size = 10000
     
     layers = [3] + 10*[4*50] + [4]
     
     # Load Data
-    data = scipy.io.loadmat('../Data/Cylinder2D_flower.mat')
+    # data = scipy.io.loadmat('../Data/Cylinder2D_flower.mat')
     
     t_star = data['t_star'] # T x 1
     x_star = data['x_star'] # N x 1

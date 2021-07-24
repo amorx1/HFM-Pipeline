@@ -5,6 +5,7 @@
 import tensorflow as tf
 import numpy as np
 import pandas as pd
+import meshio
 import os
 import glob
 import re
@@ -264,25 +265,74 @@ def Shear_Stress_3D(u, v, w, x, y, z, nx, ny, nz, Rey):
     
     return sx, sy, sz
 
-def parse_args():
+def numericalSort(value):
+    parts = numbers.split(value)
+    parts[1::2] = map(int, parts[1::2])
+    return parts
+
+def parse_args() -> dict:
 
     # sort and get list of .vtu files in correct order
     path = os.getcwd()
 
     # parse file names and registration name
     fileNames = sorted(glob.glob(os.path.join(path, "*.vtu")), key = numericalSort)
-    registrationName = fileNames[0].replace('0.vtu','*')
+    # registrationName = fileNames[0].replace('0.vtu','*')
     
     # create args
     args = {
-        "fileNames": fileNames,
-        "registrationName": registrationName
+        "fileNames": fileNames
+    #    "registrationName": registrationName
     }
 
     return args
 
-def pv2csv(args:dict):
-    return
+
+def extract_data(args:dict):
+
+    fileNames = args["fileNames"]
+
+    # create empty dictionary for spatio-temporal data
+    xyt_keys = ["t_star", "x_star", "y_star"]
+    xyt_data = dict.fromkeys(xyt_keys, None)
+
+    # create empty dictionaries for C, U, V and P
+    C_data = dict.fromkeys(range(251))
+    U_data = dict.fromkeys(range(251))
+    V_data = dict.fromkeys(range(251))
+    P_data = dict.fromkeys(range(251))
+
+    # get x,y,t data and input into output dictionary
+    mesh = meshio.read(fileNames[1])
+    xyt_data["x_star"] = mesh.points[:,0]
+    xyt_data["y_star"] = mesh.points[:,1]
+    xyt_data["t_star"] = np.linspace(0, 250, num=251)
+
+    it = 0
+    for file in fileNames:
+        
+        # read file
+        mesh = meshio.read(file)
+
+        # append C, U, V & P from file to column in output
+        C_data[it] = mesh.point_data["Con"]
+        U_data[it] = mesh.point_data["Vel"][:,0] # note Vel is a dict itself of 3 columns: x, y, z
+        V_data[it] = mesh.point_data["Con"][:,1]
+        P_data[it] = mesh.point_data["Pres"]
+        it += 1
+
+        # create nested dictionary containing all data
+        data = {
+            "x_star": xyt_data["x_star"],
+            "y_star": xyt_data["y_star"],
+            "t_star": xyt_data["t_star"],
+            "C_star": C_data,
+            "U_star": U_data,
+            "V_star": V_data,
+            "P_star": P_data
+        }
+
+    return data
 
 def numericalSort(value):
     parts = numbers.split(value)

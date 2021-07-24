@@ -320,21 +320,16 @@ def extract_data(args:dict):
         V_data[it] = mesh.point_data["Con"][:,1]
         P_data[it] = mesh.point_data["Pres"]
         it += 1
-
-        # create nested dictionary containing all data
-        data = {
-            "x_star": xyt_data["x_star"],
-            "y_star": xyt_data["y_star"],
-            "t_star": xyt_data["t_star"],
-            "C_star": C_data,
-            "U_star": U_data,
-            "V_star": V_data,
-            "P_star": P_data
-        }
+    
+    # create nested dictionary containing all data
+    data = {
+        "x_star": xyt_data["x_star"],
+        "y_star": xyt_data["y_star"],
+        "t_star": xyt_data["t_star"],
+        "C_star": C_data,
+        "U_star": U_data,
+        "V_star": V_data,
+        "P_star": P_data
+    }
 
     return data
-
-def numericalSort(value):
-    parts = numbers.split(value)
-    parts[1::2] = map(int, parts[1::2])
-    return parts

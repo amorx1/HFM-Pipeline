@@ -4,6 +4,12 @@
 
 import tensorflow as tf
 import numpy as np
+import pandas as pd
+import os
+import glob
+import re
+
+numbers = re.compile(r'(\d+)')
 
 def tf_session():
     # tf session
@@ -259,7 +265,26 @@ def Shear_Stress_3D(u, v, w, x, y, z, nx, ny, nz, Rey):
     return sx, sy, sz
 
 def parse_args():
+
+    # sort and get list of .vtu files in correct order
+    path = os.getcwd()
+
+    # parse file names and registration name
+    fileNames = sorted(glob.glob(os.path.join(path, "*.vtu")), key = numericalSort)
+    registrationName = fileNames[0].replace('0.vtu','*')
+    
+    # create args
+    args = {
+        "fileNames": fileNames,
+        "registrationName": registrationName
+    }
+
+    return args
+
+def pv2csv(args:dict):
     return
 
-def pv2csv():
-    return
+def numericalSort(value):
+    parts = numbers.split(value)
+    parts[1::2] = map(int, parts[1::2])
+    return parts

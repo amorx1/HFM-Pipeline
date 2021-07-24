@@ -4,6 +4,13 @@
 
 import tensorflow as tf
 import numpy as np
+import pandas as pd
+import meshio
+import os
+import glob
+import re
+
+numbers = re.compile(r'(\d+)')
 
 def tf_session():
     # tf session
@@ -257,3 +264,79 @@ def Shear_Stress_3D(u, v, w, x, y, z, nx, ny, nz, Rey):
     sz = (uw*nx + vw*ny + ww*nz)/Rey
     
     return sx, sy, sz
+
+def numericalSort(value):
+    parts = numbers.split(value)
+    parts[1::2] = map(int, parts[1::2])
+    return parts
+
+def parse_args() -> dict:
+
+    # sort and get list of .vtu files in correct order
+    path = os.getcwd()
+
+    # parse file names and registration name
+    fileNames = sorted(glob.glob(os.path.join(path, "*.vtu")), key = numericalSort)
+    # registrationName = fileNames[0].replace('0.vtu','*')
+    
+    # create args
+    args = {
+        "fileNames": fileNames
+    #    "registrationName": registrationName
+    }
+
+    return args
+
+
+def extract_data(args:dict):
+
+    fileNames = args["fileNames"]
+
+    # create empty dictionary for spatio-temporal data
+
+    x_star = pd.DataFrame().astype(np.float)
+    y_star = pd.DataFrame().astype(np.float)
+    t_star = pd.DataFrame().astype(np.float)
+
+    # create empty dictionaries for C, U, V and P
+    C_star = pd.DataFrame().astype(np.float)
+    U_star = pd.DataFrame().astype(np.float)
+    V_star = pd.DataFrame().astype(np.float)
+    P_star = pd.DataFrame().astype(np.float)
+
+    # get x,y,t data and input into output dictionary
+    if len(fileNames) != 0:
+        mesh = meshio.read(fileNames[1])
+        x_star.loc[:,1] = np.array(mesh.points[:,0])
+        y_star.loc[:,1] = np.array(mesh.points[:,1])
+        t_star.loc[:,1] = (np.linspace(0, 25, num=251))
+
+        it = 0
+        for file in fileNames:
+            
+            # read file
+            mesh = meshio.read(file)
+
+            # append C, U, V & P from file to column in output
+            C_star.loc[:,it] = np.array(mesh.point_data["Con"])
+            U_star.loc[:,it] = np.array(mesh.point_data["Vel"][:,0]) # note Vel is a dict itself of 3 columns: x, y, z
+            V_star.loc[:,it] = np.array(mesh.point_data["Vel"][:,1])
+            P_star.loc[:,it] = np.array(mesh.point_data["Pres"])
+            it += 1
+    
+    else:
+        print("There are no files")
+        pass
+    
+    # create dictionary containing all data
+    data = {
+        "x_star": x_star.to_numpy(),
+        "y_star": y_star.to_numpy(),
+        "t_star": t_star.to_numpy(),
+        "C_star": C_star.to_numpy(),
+        "U_star": U_star.to_numpy(),
+        "V_star": V_star.to_numpy(),
+        "P_star": P_star.to_numpy()
+    }
+
+    return data

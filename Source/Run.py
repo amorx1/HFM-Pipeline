@@ -7,9 +7,10 @@ import numpy as np
 import scipy.io
 import time
 import sys
+import os
 
 from utilities import neural_net, Navier_Stokes_2D, \
-                      tf_session, mean_squared_error, relative_error
+                      tf_session, mean_squared_error, relative_error, parse_args, extract_data
 
 class HFM(object):
     # notational conventions
@@ -148,14 +149,25 @@ class HFM(object):
         
         return c_star, u_star, v_star, p_star
 
-if __name__ == "__main__":
+def main():
+
+    try:
+        os.chdir("DATA")    # FOR TESTING ONLY
+    except:
+        print("Invalid directory")
+
+    # get file array
+    args = parse_args()
+    
+    # # pass files array to be read
+    data = extract_data(args) # must return a dictionary of the same form as loadmat (for now)
     
     batch_size = 10000
     
     layers = [3] + 10*[4*50] + [4]
     
     # Load Data
-    data = scipy.io.loadmat('../Data/Cylinder2D_flower.mat')
+    # data = scipy.io.loadmat('DATA/data_final.mat')
     
     t_star = data['t_star'] # T x 1
     x_star = data['x_star'] # N x 1
@@ -178,8 +190,8 @@ if __name__ == "__main__":
     ######################## Training Data ###############################
     ######################################################################
     
-    T_data = T # int(sys.argv[1])
-    N_data = N # int(sys.argv[2])
+    T_data = T 
+    N_data = N 
     idx_t = np.concatenate([np.array([0]), np.random.choice(T-2, T_data-2, replace=False)+1, np.array([T-1])] )
     idx_x = np.random.choice(N, N_data, replace=False)
     t_data = T_star[:, idx_t][idx_x,:].flatten()[:,None]
@@ -266,3 +278,5 @@ if __name__ == "__main__":
     scipy.io.savemat('../Results/Cylinder2D_flower_results_%s.mat' %(time.strftime('%d_%m_%Y')),
                      {'C_pred':C_pred, 'U_pred':U_pred, 'V_pred':V_pred, 'P_pred':P_pred})
  
+if __name__ == "__main__":
+    main()

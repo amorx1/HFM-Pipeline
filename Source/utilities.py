@@ -330,13 +330,13 @@ def extract_data(args:dict):
     
     # create dictionary containing all data
     data = {
-        "x_star": x_star,
-        "y_star": y_star,
-        "t_star": t_star,
-        "C_star": C_star,
-        "U_star": U_star,
-        "V_star": V_star,
-        "P_star": P_star
+        "x_star": x_star.to_numpy(),
+        "y_star": y_star.to_numpy(),
+        "t_star": t_star.to_numpy(),
+        "C_star": C_star.to_numpy(),
+        "U_star": U_star.to_numpy(),
+        "V_star": V_star.to_numpy(),
+        "P_star": P_star.to_numpy()
     }
 
     return data

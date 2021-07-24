@@ -169,17 +169,17 @@ def main():
     # Load Data
     # data = scipy.io.loadmat('DATA/data_final.mat')
     
-    t_star = data['t_star'].to_numpy() # T x 1
-    x_star = data['x_star'].to_numpy() # N x 1
-    y_star = data['y_star'].to_numpy() # N x 1
+    t_star = data['t_star'] # T x 1
+    x_star = data['x_star'] # N x 1
+    y_star = data['y_star'] # N x 1
     
     T = t_star.shape[0]
     N = x_star.shape[0]
         
-    U_star = data['U_star'].to_numpy() # N x T
-    V_star = data['V_star'].to_numpy() # N x T
-    P_star = data['P_star'].to_numpy() # N x T
-    C_star = data['C_star'].to_numpy()# N x T
+    U_star = data['U_star'] # N x T
+    V_star = data['V_star'] # N x T
+    P_star = data['P_star'] # N x T
+    C_star = data['C_star'] # N x T
     
     # Rearrange Data 
     T_star = np.tile(t_star, (1,N)).T # N x T

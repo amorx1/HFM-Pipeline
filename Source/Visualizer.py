@@ -22,6 +22,7 @@ V = data['V_star'] # N x T
 P = data['P_star'] # N x T
 C = data['C_star'] # N x T
 
+################################## Visualize Individual Points #######################################
 # create a single frame to begin with.
 # this is going to be a 2x2 array with x-y coordinates
 # each frame is 1 out of the 250 timesteps
@@ -42,12 +43,13 @@ C = data['C_star'] # N x T
 #     sb.heatmap(pivotted)
 #     plt.show()
 
+################################# Interpolation to cell data for visualization ###############################
 def write_vtu(x, y, t, C, U, V, P):
-    grid_x, grid_y = np.mgrid[min(x):max(x):1000j, min(y):max(y):1000j]
+    grid_x, grid_y = np.mgrid[min(x):max(x):10000j, min(y):max(y):10000j]
     points = np.concatenate((x, y), axis=1)
     values = C[:,150]
     
-    grid_linear = griddata(points, values, (grid_x, grid_y), method='cubic')
+    grid_linear = griddata(points, values, (grid_y, grid_x), method='linear', fill_value=0.0)
     grid_cubic = griddata(points, values, (grid_x, grid_y), method='cubic')
     
     plt.subplot(221)

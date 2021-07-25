@@ -1,3 +1,7 @@
+"""
+@author: Akshay Mor, Maziar Raissi
+"""
+
 from matplotlib.colors import rgb2hex
 from numpy.lib.function_base import meshgrid
 from pandas.core.reshape.pivot import pivot

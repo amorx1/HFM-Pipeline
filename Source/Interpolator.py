@@ -1,3 +1,5 @@
+from re import X
+from typing import IO
 from matplotlib.tri.triinterpolate import LinearTriInterpolator
 import meshio
 import scipy.io
@@ -5,10 +7,12 @@ import matplotlib.pyplot as plt
 from matplotlib.tri import CubicTriInterpolator
 from matplotlib.tri import Triangulation
 import numpy as np
+import pandas as pd
 import os
-from utilities import parse_args, numericalSort
 import io
 import cv2
+from utilities import parse_args, numericalSort
+
 
 # returns triangulation object
 def triangulate(mesh):
@@ -100,20 +104,41 @@ def generate_frame_arrays(fNames, interpolator:str, smoothing:str=None):
 def process():
     return
 
+def mat2vtu(mesh_template, results_mat):
+
+    points = mesh_template.points
+    for i in range(251):
+        output = pd.DataFrame(points)
+        output.loc[:, "Pres"] = results_mat["P_pred"][:,i]
+        cells = mesh_template.cells
+        point_data = {
+            "Pres": output.loc[:, "Pres"]
+        }
+        mesh = meshio.Mesh(
+            points,
+            cells,
+            point_data
+        )
+        mesh.write("_"+str(i)+".vtu")
+
+
 def main():
     try:
         os.chdir("DATA")    # FOR TESTING ONLY
     except:
         raise IOError("Invalid directory")
 
-    fNames = parse_args()["fileNames"]
+    mesh_template = meshio.read("misc/mesh_template.vtu")
+    results_mat = scipy.io.loadmat("training_120k_results_26_07_2021.mat")
+    mat2vtu(mesh_template, results_mat)
+    # fNames = parse_args()["fileNames"]
 
-    if fNames:
-        try:
-            generate_frame_arrays(fNames, "linear")
+    # if fNames:
+    #     try:
+    #         generate_frame_arrays(fNames, "linear")
 
-        except:
-            raise RuntimeError("There was a problem rendering the results")
+    #     except:
+    #         raise RuntimeError("There was a problem rendering the results")
 
 if __name__ == "__main__":
     main()

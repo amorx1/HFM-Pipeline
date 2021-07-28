@@ -162,115 +162,12 @@ def Strain_Rate_2D(u, v, x, y):
     
     return [eps11dot, eps12dot, eps22dot]
 
-def Navier_Stokes_3D(c, u, v, w, p, t, x, y, z, Pec, Rey):
-    
-    Y = tf.concat([c, u, v, w, p], 1)
-    
-    Y_t = fwd_gradients(Y, t)
-    Y_x = fwd_gradients(Y, x)
-    Y_y = fwd_gradients(Y, y)
-    Y_z = fwd_gradients(Y, z)
-    Y_xx = fwd_gradients(Y_x, x)
-    Y_yy = fwd_gradients(Y_y, y)
-    Y_zz = fwd_gradients(Y_z, z)
-    
-    c = Y[:,0:1]
-    u = Y[:,1:2]
-    v = Y[:,2:3]
-    w = Y[:,3:4]
-    p = Y[:,4:5]
-    
-    c_t = Y_t[:,0:1]
-    u_t = Y_t[:,1:2]
-    v_t = Y_t[:,2:3]
-    w_t = Y_t[:,3:4]
-    
-    c_x = Y_x[:,0:1]
-    u_x = Y_x[:,1:2]
-    v_x = Y_x[:,2:3]
-    w_x = Y_x[:,3:4]
-    p_x = Y_x[:,4:5]
-    
-    c_y = Y_y[:,0:1]
-    u_y = Y_y[:,1:2]
-    v_y = Y_y[:,2:3]
-    w_y = Y_y[:,3:4]
-    p_y = Y_y[:,4:5]
-       
-    c_z = Y_z[:,0:1]
-    u_z = Y_z[:,1:2]
-    v_z = Y_z[:,2:3]
-    w_z = Y_z[:,3:4]
-    p_z = Y_z[:,4:5]
-    
-    c_xx = Y_xx[:,0:1]
-    u_xx = Y_xx[:,1:2]
-    v_xx = Y_xx[:,2:3]
-    w_xx = Y_xx[:,3:4]
-    
-    c_yy = Y_yy[:,0:1]
-    u_yy = Y_yy[:,1:2]
-    v_yy = Y_yy[:,2:3]
-    w_yy = Y_yy[:,3:4]
-       
-    c_zz = Y_zz[:,0:1]
-    u_zz = Y_zz[:,1:2]
-    v_zz = Y_zz[:,2:3]
-    w_zz = Y_zz[:,3:4]
-    
-    e1 = c_t + (u*c_x + v*c_y + w*c_z) - (1.0/Pec)*(c_xx + c_yy + c_zz)
-    e2 = u_t + (u*u_x + v*u_y + w*u_z) + p_x - (1.0/Rey)*(u_xx + u_yy + u_zz)
-    e3 = v_t + (u*v_x + v*v_y + w*v_z) + p_y - (1.0/Rey)*(v_xx + v_yy + v_zz)
-    e4 = w_t + (u*w_x + v*w_y + w*w_z) + p_z - (1.0/Rey)*(w_xx + w_yy + w_zz)
-    e5 = u_x + v_y + w_z
-    
-    return e1, e2, e3, e4, e5
-
-def Gradient_Velocity_3D(u, v, w, x, y, z):
-    
-    Y = tf.concat([u, v, w], 1)
-    
-    Y_x = fwd_gradients(Y, x)
-    Y_y = fwd_gradients(Y, y)
-    Y_z = fwd_gradients(Y, z)
-    
-    u_x = Y_x[:,0:1]
-    v_x = Y_x[:,1:2]
-    w_x = Y_x[:,2:3]
-    
-    u_y = Y_y[:,0:1]
-    v_y = Y_y[:,1:2]
-    w_y = Y_y[:,2:3]
-    
-    u_z = Y_z[:,0:1]
-    v_z = Y_z[:,1:2]
-    w_z = Y_z[:,2:3]
-    
-    return [u_x, v_x, w_x, u_y, v_y, w_y, u_z, v_z, w_z]
-
-def Shear_Stress_3D(u, v, w, x, y, z, nx, ny, nz, Rey):
-        
-    [u_x, v_x, w_x, u_y, v_y, w_y, u_z, v_z, w_z] = Gradient_Velocity_3D(u, v, w, x, y, z)
-
-    uu = u_x + u_x
-    uv = u_y + v_x
-    uw = u_z + w_x
-    vv = v_y + v_y
-    vw = v_z + w_y
-    ww = w_z + w_z
-    
-    sx = (uu*nx + uv*ny + uw*nz)/Rey
-    sy = (uv*nx + vv*ny + vw*nz)/Rey
-    sz = (uw*nx + vw*ny + ww*nz)/Rey
-    
-    return sx, sy, sz
-
 def numericalSort(value):
     parts = numbers.split(value)
     parts[1::2] = map(int, parts[1::2])
     return parts
 
-def parse_args() -> dict:
+def getFiles() -> dict:
 
     # sort and get list of .vtu files in correct order
     path = os.getcwd()

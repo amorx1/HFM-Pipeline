@@ -8,9 +8,9 @@ import scipy.io
 import time
 import sys
 import os
-
+from Pipeline import *
 from utilities import neural_net, Navier_Stokes_2D, \
-                      tf_session, mean_squared_error, relative_error, parse_args, extract_data
+                      tf_session, mean_squared_error, relative_error, getFiles, extract_data
 
 class HFM(object):
     # notational conventions
@@ -151,16 +151,15 @@ class HFM(object):
 
 def main():
 
+    # change working directory to DATA
     try:
-        os.chdir("DATA")    # FOR TESTING ONLY
+        os.chdir("DATA/input_data")    # FOR TESTING ONLY
     except:
         print("Invalid directory")
 
-    # get file array
-    args = parse_args()
-    
-    # # pass files array to be read
-    data = extract_data(args) # must return a dictionary of the same form as loadmat (for now)
+    # create Pipeline instance
+    pipeline = Pipeline()
+    pipeline.extractData(getFiles()["fileNames"])
     
     batch_size = 10000
     
@@ -169,17 +168,17 @@ def main():
     # Load Data
     # data = scipy.io.loadmat('DATA/data_final.mat')
     
-    t_star = data['t_star'] # T x 1
-    x_star = data['x_star'] # N x 1
-    y_star = data['y_star'] # N x 1
+    t_star = pipeline.input_data["t_star"] # T x 1
+    x_star = pipeline.input_data["x_star"] # N x 1
+    y_star = pipeline.input_data["y_star"] # N x 1
     
     T = t_star.shape[0]
     N = x_star.shape[0]
         
-    U_star = data['U_star'] # N x T
-    V_star = data['V_star'] # N x T
-    P_star = data['P_star'] # N x T
-    C_star = data['C_star'] # N x T
+    U_star = pipeline.input_data["U_star"] # N x T
+    V_star = pipeline.input_data["V_star"] # N x T
+    P_star = pipeline.input_data["P_star"] # N x T
+    C_star = pipeline.input_data["C_star"] # N x T
     
     # Rearrange Data 
     T_star = np.tile(t_star, (1,N)).T # N x T
@@ -197,7 +196,7 @@ def main():
     t_data = T_star[:, idx_t][idx_x,:].flatten()[:,None]
     x_data = X_star[:, idx_t][idx_x,:].flatten()[:,None]
     y_data = Y_star[:, idx_t][idx_x,:].flatten()[:,None]
-    c_data = C_star[:, idx_t][idx_x,:].flatten()[:,None]
+    c_data = C_star[:, idx_t][idx_x,:].flatten()[:,None] # TYPE ERROR HERE
         
     T_eqns = T
     N_eqns = N

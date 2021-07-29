@@ -1,3 +1,7 @@
+"""
+@author: Akshay Mor
+"""
+
 from re import X
 from typing import IO
 from matplotlib.tri.triinterpolate import LinearTriInterpolator
@@ -16,8 +20,8 @@ from utilities import getFiles, numericalSort
 
 class Pipeline:
 
-    # fileNames is a compulsory argument
-    def __init__(self, fileNames = None, mesh:dict = None, triangulation = None, inputData:dict = None, predData: dict=None, xi:np.ndarray = None, yi:np.ndarray = None):
+    def __init__(self, fileNames = None, mesh:dict = None, triangulation = None, inputData:dict = None,
+                         predData: dict=None, xi:np.ndarray = None, yi:np.ndarray = None):
 
         self.fileNames = fileNames
         self.mesh = mesh
@@ -107,8 +111,6 @@ class Pipeline:
         self.input_data["U_star"] = U_star
         self.input_data["V_star"] = V_star
         self.input_data["P_star"] = P_star
-
-                
 
     # creates a mesh template for the Pipeline object
     # pass in the array of filenames to pick one and use the coordinates and cell format as a template for an output mesh
@@ -207,6 +209,8 @@ class Pipeline:
 
         print("Frame " + str(it) + ": done")
 
+    def calculate_errors():
+        return
 # def render_array(triangulation, xi, yi, C, it, interpolator:str, smoothing_algo:str=None):
 
 #     if interpolator == "linear": interpolation = LinearTriInterpolator(triangulation, C)

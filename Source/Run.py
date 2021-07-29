@@ -132,7 +132,7 @@ class HFM(object):
                 [loss_value,
                  learning_rate_value] = self.sess.run([self.loss,
                                                        self.learning_rate], tf_dict)
-                print('It: %d, Loss: %.3e, Time: %.2fs, Running Time: %.2fh, Learning Rate: %.1e'
+                print('It: %d, Loss: %.3e, Time: %.2fs, Running Time: %.2fh, Learnsing Rate: %.1e'
                       %(it, loss_value, elapsed, running_time, learning_rate_value))
                 sys.stdout.flush()
                 start_time = time.time()
@@ -168,17 +168,17 @@ def main():
     # Load Data
     # data = scipy.io.loadmat('DATA/data_final.mat')
     
-    t_star = pipeline.input_data["t_star"] # T x 1
-    x_star = pipeline.input_data["x_star"] # N x 1
-    y_star = pipeline.input_data["y_star"] # N x 1
+    t_star = pipeline.input_data["t_star"].to_numpy() # T x 1
+    x_star = pipeline.input_data["x_star"].to_numpy() # N x 1
+    y_star = pipeline.input_data["y_star"].to_numpy() # N x 1
     
     T = t_star.shape[0]
     N = x_star.shape[0]
         
-    U_star = pipeline.input_data["U_star"] # N x T
-    V_star = pipeline.input_data["V_star"] # N x T
-    P_star = pipeline.input_data["P_star"] # N x T
-    C_star = pipeline.input_data["C_star"] # N x T
+    U_star = pipeline.input_data["U_star"].to_numpy() # N x T
+    V_star = pipeline.input_data["V_star"].to_numpy() # N x T
+    P_star = pipeline.input_data["P_star"].to_numpy() # N x T
+    C_star = pipeline.input_data["C_star"].to_numpy() # N x T
     
     # Rearrange Data 
     T_star = np.tile(t_star, (1,N)).T # N x T
@@ -279,3 +279,4 @@ def main():
  
 if __name__ == "__main__":
     main()
+  

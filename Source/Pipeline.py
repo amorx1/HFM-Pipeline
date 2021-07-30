@@ -19,7 +19,7 @@ import sys
 import time
 import glob
 from Objects import *
-from utilities import getFiles, numericalSort, relative_error, neural_net, mean_squared_error, Navier_Stokes_2D, tf_session
+from utilities import numericalSort, relative_error, neural_net, mean_squared_error, Navier_Stokes_2D, tf_session
 
 class Pipeline:
 
@@ -79,7 +79,7 @@ class Pipeline:
             raise IOError("An HFM object already exists within the Pipeline!")
 
     # Read and write input data to Inputs
-    def extractData(self, fileNames):
+    def extractData(self, fileNames=None):
         
         # read files
         x_star = pd.DataFrame().astype(np.float)
@@ -97,14 +97,14 @@ class Pipeline:
 
             # if fileNames is not passed as argument, use existing filenames of object
             if (fileNames == None):
-                if len(fileNames) != 0:
-                    mesh = meshio.read(fileNames[1])
+                if len(self.fileNames) != 0:
+                    mesh = meshio.read(self.fileNames[1])
                     x_star.loc[:,1] = np.array(mesh.points[:,0])
                     y_star.loc[:,1] = np.array(mesh.points[:,1])
                     t_star.loc[:,1] = (np.linspace(0, 25, num=251))
 
                     it = 0
-                    for file in fileNames:
+                    for file in self.fileNames:
 
                         # read file
                         mesh = meshio.read(file)

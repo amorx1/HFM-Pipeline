@@ -10,7 +10,7 @@ import sys
 import os
 from Pipeline import *
 from utilities import neural_net, Navier_Stokes_2D, \
-                      tf_session, mean_squared_error, relative_error, getFiles
+                      tf_session, mean_squared_error, relative_error
 
 
 def main():
@@ -46,8 +46,6 @@ def main():
     p.Predictions = p.HFM.predict(p.TestData())
 
     # calculate errors
-    
-
     print("Done")
     
     # # Training

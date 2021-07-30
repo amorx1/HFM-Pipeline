@@ -71,7 +71,10 @@ class TrainingData:
 
 class Predictions:
     def __init__(preds):
-        preds.x = 1
+        preds.c_star = pd.DataFrame()
+        preds.u_star = pd.DataFrame()
+        preds.v_star = pd.DataFrame()
+        preds.p_star = pd.DataFrame()
 
 class Equations:
     def __init__(eqns):
@@ -88,6 +91,9 @@ class TestData:
         test.u_test = pd.DataFrame()
         test.v_test = pd.DataFrame()
         test.p_test = pd.DataFrame()
+
+    def __call__(test):
+        return test.t_test, test.x_test, test.y_test
 
 class Errors:
     def __init__(errs):

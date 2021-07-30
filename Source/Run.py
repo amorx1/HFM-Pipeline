@@ -10,7 +10,7 @@ import sys
 import os
 from Pipeline import *
 from utilities import neural_net, Navier_Stokes_2D, \
-                      tf_session, mean_squared_error, relative_error, getFiles, extract_data
+                      tf_session, mean_squared_error, relative_error, getFiles
 
 
 def main():
@@ -22,57 +22,33 @@ def main():
         print("Invalid directory")
 
     # initialise the pipeline
-    pipeline = Pipeline()
-    pipeline.extractData(getFiles()["fileNames"])
-    pipeline.Inputs.setTN()
+    p = Pipeline()
 
-    pipeline.TrainingData, pipeline.Equations, pipeline.TestData = pipeline.Inputs.splitTrainTestEqns()
+    # training settings
+    p.batch_size = 10000
+    p.layers = [3] + 10*[4*50] + [4]
+    p.Pec = 1000000
+    p.Rey = 450
+    
+    # prepare all data
+    p.getFiles()
+    p.extractData()
+    p.Inputs.setTN()
+    p.TrainingData, p.Equations, p.TestData = p.Inputs.splitTrainTestEqns()
+
+    # create model using data
+    p.model()
+
+    # train model
+    p.HFM.train(total_time = 12, learning_rate = 1e-3)
+
+    # make predictions
+    p.Predictions = p.HFM.predict(p.TestData())
+
+    # calculate errors
+    
+
     print("Done")
-    
-    # batch_size = 10000
-    
-    # layers = [3] + 10*[4*50] + [4]
-    
-    # # Load Data
-    # # data = scipy.io.loadmat('DATA/data_final.mat')
-    
-    # t_star = pipeline.input_data["t_star"] # T x 1
-    # x_star = pipeline.input_data["x_star"] # N x 1
-    # y_star = pipeline.input_data["y_star"] # N x 1
-    
-    # T = t_star.shape[0]
-    # N = x_star.shape[0]
-        
-    # U_star = pipeline.input_data["U_star"] # N x T
-    # V_star = pipeline.input_data["V_star"] # N x T
-    # P_star = pipeline.input_data["P_star"] # N x T
-    # C_star = pipeline.input_data["C_star"] # N x T
-    
-    # # Rearrange Data 
-    # T_star = np.tile(t_star, (1,N)).T # N x T
-    # X_star = np.tile(x_star, (1,T)) # N x T
-    # Y_star = np.tile(y_star, (1,T)) # N x T
-    
-    # ######################################################################
-    # ######################## Training Data ###############################
-    # ######################################################################
-    
-    # T_data = T 
-    # N_data = N 
-    # idx_t = np.concatenate([np.array([0]), np.random.choice(T-2, T_data-2, replace=False)+1, np.array([T-1])] )
-    # idx_x = np.random.choice(N, N_data, replace=False)
-    # t_data = T_star[:, idx_t][idx_x,:].flatten()[:,None]
-    # x_data = X_star[:, idx_t][idx_x,:].flatten()[:,None]
-    # y_data = Y_star[:, idx_t][idx_x,:].flatten()[:,None]
-    # c_data = C_star[:, idx_t][idx_x,:].flatten()[:,None]
-        
-    # T_eqns = T
-    # N_eqns = N
-    # idx_t = np.concatenate([np.array([0]), np.random.choice(T-2, T_eqns-2, replace=False)+1, np.array([T-1])] )
-    # idx_x = np.random.choice(N, N_eqns, replace=False)
-    # t_eqns = T_star[:, idx_t][idx_x,:].flatten()[:,None]
-    # x_eqns = X_star[:, idx_t][idx_x,:].flatten()[:,None]
-    # y_eqns = Y_star[:, idx_t][idx_x,:].flatten()[:,None]
     
     # # Training
     # model = HFM(t_data, x_data, y_data, c_data,

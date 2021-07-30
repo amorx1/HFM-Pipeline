@@ -17,6 +17,7 @@ import pandas as pd
 import os
 import sys
 import time
+import glob
 from Objects import *
 from utilities import getFiles, numericalSort, relative_error, neural_net, mean_squared_error, Navier_Stokes_2D, tf_session
 
@@ -25,92 +26,61 @@ class Pipeline:
     def __init__(self, fileNames = None, mesh:dict = None, triangulation = None, inputData:dict = None,
                          predictions: dict=None, xi:np.ndarray = None, yi:np.ndarray = None, HFM = None):
 
+        # Objects
+        self.Inputs = InputData()
+        self.TrainingData = TrainingData()
+        self.TestData = TestData()
+        self.Equations = Equations()
+        self.Predictions = Predictions()
         self.HFM = None
+
+        # Attributes
         self.fileNames = fileNames
         self.mesh = mesh
         self.triangulation = triangulation
         self.mesh_temp = None
         self.xi = None
         self.yi = None
-        self.T = None
-        self.N = None
-        self.Inputs = InputData()
-        self.TrainingData = TrainingData()
-        self.TestData = TestData()
-        self.Equations = Equations()
-        self.Predictions = Predictions()
-        self.input_data = {
-            "x_star": None,
-            "y_star": None,
-            "t_star": None,
-            "C_star": None,
-            "U_star": None,
-            "V_star": None,
-            "P_star": None
-        }
-        # InputData()
-        self.rearranged_inputs = {
-            "X_star": None,
-            "Y_star": None,
-            "T_star": None,
-            "C_star": None,
-            "U_star": None,
-            "V_star": None,
-            "P_star": None
-        }
-        self.eqns = {
-            "t_eqns": None,
-            "x_eqns": None,
-            "y_eqns": None
-        }
-        self.predictions = {
-            "C_pred": None,
-            "U_pred": None,
-            "V_pred": None,
-            "P_pred": None
-        }
-        self.train_data = {
-            "t_data": None,
-            "x_data": None,
-            "y_data": None,
-            "c_data": None,
-        }
-        self.test_data = {
-            "x_test": None,
-            "y_test": None,
-            "t_test": None,
-            "C_test": None,
-            "U_test": None,
-            "V_test": None,
-            "P_test": None
-        }
-        self.errors = {
-            "error_c": None,
-            "error_u": None,
-            "error_v": None,
-            "error_p": None
-        }
+        self.batch_size = None
+        self.layers = None
+        self.Pec = None
+        self.Rey = None
+
+        # Settings
+        self.outputMAT = True
+
         self.settings = {
             "interpolator": None,
             "smoothing_algorithm": None
         }
 
+    def getFiles(self):
+        # sort and get list of .vtu files in correct order
+        path = os.getcwd()
+        if(self.fileNames == None):
+            # parse file names and registration name
+            self.fileNames = sorted(glob.glob(os.path.join(path, "*.vtu")), key = numericalSort)
+        else: raise IOError("A set of files already exists for this pipeline!")
+        
     def setTN(self):
-        self.T = self.Inputs.t_star.shape[0]
-        self.N = self.Inputs.x_star.shape[0]
+        if (self.T == None and self.N == None):
+            self.T = self.Inputs.t_star.shape[0]
+            self.N = self.Inputs.x_star.shape[0]
+        else: raise IOError("T and N already exist for this pipeline!")
 
-    # HFM object instantiated with input data filled
+    # Instantiate HFM object with existing input data
     def model(self):
         if self.HFM == None:
-            if (self.input_data != None):
-                self.HFM = HFM(t_data=self.rearranged_inputs["t_star"], x_data=self.rearranged_inputs["x_star"], y_data=self.rearranged_inputs["y_star"], c_data=self.rearranged_inputs["C_star"], t_eqns=self.eqns["t_eqns"], x_eqns=self.eqns["x_eqns"], y_eqns=self.eqns["y_eqns"], layers=self.layers, batch_size=self.batch_size, Pec=self.Pec, Rey=self.Rey)
+            if (self.Inputs != None):
+                self.HFM = HFM(t_data=self.TrainingData.t_data, x_data=self.TrainingData.x_data, y_data=self.TrainingData.y_data, c_data=self.TrainingData.c_data, t_eqns=self.Equations.t_eqns, x_eqns=self.Equations.x_eqns, y_eqns=self.Equations.y_eqns, layers=self.layers, batch_size=self.batch_size, Pec=self.Pec, Rey=self.Rey)
             else:
                 raise IOError("HFM cannot be created without input data!")
         else:
             raise IOError("An HFM object already exists within the Pipeline!")
-    # get data for training from vtu files
-    def extractData(self, fileNames):
 
+    # Read and write input data to Inputs
+    def extractData(self, fileNames):
+        
         # read files
         x_star = pd.DataFrame().astype(np.float)
         y_star = pd.DataFrame().astype(np.float)
@@ -178,26 +148,6 @@ class Pipeline:
         self.Inputs.U_star = U_star
         self.Inputs.V_star = V_star
         self.Inputs.P_star = P_star
-    #rearrange data
-    def rearrangeData(self):
-
-        if(self.input_data != None):
-            T = (self.input_data["t_star"]).shape[0]
-            N = (self.input_data["x_star"]).shape[0]
-
-            self.rearranged_inputs["T_star"] = np.tile(self.input_data["t_star"], (1,N)).T
-            self.rearranged_inputs["X_star"] = np.tile(self.input_data["x_star"], (1,T))
-            self.rearranged_inputs["Y_star"] = np.tile(self.input_data["y_star"], (1,T))
-
-            # Training Data
-            T_data = T
-            N_data = N
-            idx_t = np.concatenate([np.array([0]), np.random.choice(T-2, T_data-2, replace=False)+1, np.array([T-1])] )
-            idx_x = np.random.choice(N, N_data, replace=False)
-            t_data = self.rearranged_inputs["T_star"][:, idx_t][idx_x,:].flatten()[:,None]
-            x_data = self.rearranged_inputs["X_star"][:, idx_t][idx_x,:].flatten()[:,None]
-            y_data = self.rearranged_inputs["Y_star"][idx_x,:].flatten()[:,None]
-            c_data = self.input_data["C_Star"][:, idx_t][idx_x,:].flatten()[:,None]
 
     # creates a mesh template for the Pipeline object
     # pass in the array of filenames to pick one and use the coordinates and cell format as a template for an output mesh
@@ -398,6 +348,7 @@ class Pipeline:
                     point_data
                 )
                 mesh.write("_"+str(i)+".vtu")
+
         # if mesh_template and predictions are provided
         else:
             return
@@ -532,12 +483,13 @@ class HFM:
         
         tf_dict = {hfm.t_data_tf: t_star, hfm.x_data_tf: x_star, hfm.y_data_tf: y_star}
         
-        c_star = hfm.sess.run(hfm.c_data_pred, tf_dict)
-        u_star = hfm.sess.run(hfm.u_data_pred, tf_dict)
-        v_star = hfm.sess.run(hfm.v_data_pred, tf_dict)
-        p_star = hfm.sess.run(hfm.p_data_pred, tf_dict)
+        predictions = Predictions()
+        predictions.c_star = hfm.sess.run(hfm.c_data_pred, tf_dict)
+        predictions.u_star = hfm.sess.run(hfm.u_data_pred, tf_dict)
+        predictions.v_star = hfm.sess.run(hfm.v_data_pred, tf_dict)
+        predictions.p_star = hfm.sess.run(hfm.p_data_pred, tf_dict)
         
-        return c_star, u_star, v_star, p_star
+        return predictions
 
 def main():
     try:

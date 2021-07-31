@@ -47,6 +47,7 @@ class Pipeline:
         self.Rey = None
 
         # Settings
+        self.useGPUAcceleration = False
         self.outputMAT = True
 
         self.settings = {
@@ -246,23 +247,19 @@ class Pipeline:
 
     #     print("Frame " + str(it) + ": done")
 
-    def calculate_errors(self, predictions=None, test=None):
+    def calculateErrors(self):
 
-        # if args passed, override self
-        if (predictions != None and test != None):
-            errors = {
-            "error_c" : relative_error(predictions["C_pred"], test["C_test"]),
-            "error_u" : relative_error(predictions["U_pred"], test["U_test"]),
-            "error_v" : relative_error(predictions["V_pred"], test["V_test"]),
-            "error_p" : relative_error(predictions["P_pred"], test["P_test"])
-            }
+        # if there are predictions and test data
+        if (self.Predictions != None and self.TestData != None):
+            errors = Errors()
+            errors.error_c = relative_error(self.Predictions.c_pred, self.TestData.c_test)
+            errors.error_u = relative_error(self.Predictions.u_pred, self.TestData.u_test)
+            errors.error_v = relative_error(self.Predictions.v_pred, self.TestData.v_test)
+            errors.error_p = relative_error(self.Predictions.p_pred, self.TestData.p_test)
             return errors
 
         else:
-            self.errors["error_c"] = relative_error(self.predictions["C_pred"], self.test_data["C_test"])
-            self.errors["error_u"] = relative_error(self.predictions["U_pred"], self.test_data["U_test"])
-            self.errors["error_v"] = relative_error(self.predictions["V_pred"], self.test_data["V_test"])
-            self.errors["error_p"] = relative_error(self.predictions["P_pred"], self.test_data["P_test"])
+            pass
 
 
     # def render_array(triangulation, xi, yi, C, it, interpolator:str, smoothing_algo:str=None):
@@ -479,15 +476,15 @@ class HFM:
                 start_time = time.time()
             it += 1
     
-    def predict(hfm, t_star, x_star, y_star):
+    def predict(hfm, t_test, x_test, y_test):
         
-        tf_dict = {hfm.t_data_tf: t_star, hfm.x_data_tf: x_star, hfm.y_data_tf: y_star}
+        tf_dict = {hfm.t_data_tf: t_test, hfm.x_data_tf: x_test, hfm.y_data_tf: y_test}
         
         predictions = Predictions()
-        predictions.c_star = hfm.sess.run(hfm.c_data_pred, tf_dict)
-        predictions.u_star = hfm.sess.run(hfm.u_data_pred, tf_dict)
-        predictions.v_star = hfm.sess.run(hfm.v_data_pred, tf_dict)
-        predictions.p_star = hfm.sess.run(hfm.p_data_pred, tf_dict)
+        predictions.c_pred = hfm.sess.run(hfm.c_data_pred, tf_dict)
+        predictions.u_pred = hfm.sess.run(hfm.u_data_pred, tf_dict)
+        predictions.v_pred = hfm.sess.run(hfm.v_data_pred, tf_dict)
+        predictions.p_pred = hfm.sess.run(hfm.p_data_pred, tf_dict)
         
         return predictions
 

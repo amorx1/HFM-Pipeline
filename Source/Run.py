@@ -2,6 +2,7 @@
 @author: Akshay Mor, Maziar Raissi
 """
 
+import logging
 import tensorflow as tf
 import numpy as np
 import scipy.io
@@ -16,10 +17,7 @@ from utilities import neural_net, Navier_Stokes_2D, \
 def main():
 
     # change working directory to locate .vtu files
-    try:
-        os.chdir("DATA/input_data")    # FOR TESTING ONLY
-    except:
-        print("Invalid directory")
+    os.chdir("DATA/input_data")
 
     # initialise the pipeline
     pipeline = Pipeline()
@@ -46,14 +44,8 @@ def main():
     # train model
     pipeline.HFM.train(total_time = 0.01, learning_rate = 1e-3)
 
-    # make predictions
-    pipeline.Predictions = pipeline.HFM.predict(pipeline.TestData.t_test, pipeline.TestData.x_test, pipeline.TestData.y_test)
-
-    # calculate errors
-    pipeline.Errors = pipeline.calculateErrors()
-
-    if (pipeline.outputMAT):
-        pipeline.Predictions.save2mat()
+    # make predictions and calculate errors
+    pipeline.Predictions, pipeline.Errors = pipeline.Predict()
 
     print("Done")
     

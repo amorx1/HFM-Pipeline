@@ -61,14 +61,12 @@ class Pipeline:
         if(self.fileNames == None):
             # parse file names and registration name
             self.fileNames = sorted(glob.glob(os.path.join(path, "*.vtu")), key = numericalSort)
-        else: raise IOError("A set of files already exists for this pipeline!")
-        
+        else: raise IOError("A set of files already exists for this pipeline!") 
     def setTN(self):
         if (self.T == None and self.N == None):
             self.T = self.Inputs.t_star.shape[0]
             self.N = self.Inputs.x_star.shape[0]
         else: raise IOError("T and N already exist for this pipeline!")
-
     # Instantiate HFM object with existing input data
     def model(self):
         if self.HFM == None:
@@ -78,7 +76,6 @@ class Pipeline:
                 raise IOError("HFM cannot be created without input data!")
         else:
             raise IOError("An HFM object already exists within the Pipeline!")
-
     # Read and write input data to Inputs
     def extractData(self, fileNames=None):
         
@@ -149,7 +146,6 @@ class Pipeline:
         self.Inputs.U_star = U_star
         self.Inputs.V_star = V_star
         self.Inputs.P_star = P_star
-
     # creates a mesh template for the Pipeline object
     # pass in the array of filenames to pick one and use the coordinates and cell format as a template for an output mesh
     def createMeshTemplate(self):
@@ -160,7 +156,6 @@ class Pipeline:
                 self.mesh_temp.point_data = None
             else:
                 raise IOError("Incorrect file type to create mesh template! Only .vtu files are supported at this time")
-
     # returns to a variable, a mesh template with all the correct xy coordinates and cells; points_data is empty for filling
     def meshTemplate(self):
         if (self.fileNames[0].endswith('.vtu')):
@@ -171,7 +166,6 @@ class Pipeline:
             return mesh_template
         else:
             raise IOError("Incorrect file type to create mesh template!")
-
     # creates triangulation for Pipleline object
     # mesh passed in here will override the mesh belonging to the object
     def triangulate(self, mesh):
@@ -189,7 +183,6 @@ class Pipeline:
                 self.triangulation = Triangulation(mesh.points[:,0], mesh.points[:,1], triangles=triangles)
             else: 
                 raise IOError("A triangulation already exists within object")
-
     # creates and returns a triangulation object to a variable
     def create_trigangulation(self, mesh):
         if (mesh == None):
@@ -206,7 +199,6 @@ class Pipeline:
             triangles = mesh.cells_dict["triangle"]
             triangulation = Triangulation(mesh.points[:,0], mesh.points[:,1], triangles=triangles)
             return triangulation
-
     # returns x and y coordinates (constant for all timesteps)
     def get_coords(self, mesh):
         if mesh != None:
@@ -247,19 +239,19 @@ class Pipeline:
 
     #     print("Frame " + str(it) + ": done")
 
-    def calculateErrors(self):
+    # def calculateErrors(self):
 
-        # if there are predictions and test data
-        if (self.Predictions != None and self.TestData != None):
-            errors = Errors()
-            errors.error_c = relative_error(self.Predictions.c_pred, self.TestData.c_test)
-            errors.error_u = relative_error(self.Predictions.u_pred, self.TestData.u_test)
-            errors.error_v = relative_error(self.Predictions.v_pred, self.TestData.v_test)
-            errors.error_p = relative_error(self.Predictions.p_pred, self.TestData.p_test)
-            return errors
+    #     # if there are predictions and test data
+    #     if (self.Predictions != None and self.TestData != None):
+    #         errors = Errors()
+    #         errors.error_c = relative_error(self.Predictions.c_pred, self.TestData.c_test)
+    #         errors.error_u = relative_error(self.Predictions.u_pred, self.TestData.u_test)
+    #         errors.error_v = relative_error(self.Predictions.v_pred, self.TestData.v_test)
+    #         errors.error_p = relative_error(self.Predictions.p_pred, self.TestData.p_test)
+    #         return errors
 
-        else:
-            pass
+    #     else:
+    #         pass
 
 
     # def render_array(triangulation, xi, yi, C, it, interpolator:str, smoothing_algo:str=None):
@@ -321,8 +313,47 @@ class Pipeline:
     #         C = meshio.read(file).point_data["Con"]
     #         render_array(triangulation, xi, yi, C, it, settings["interpolator"], settings["smoothing"])
     #         it += 1
+    def Predict(self):
 
+        predictions = Predictions()
+        errors = Errors()
+        predictions.c_pred = 0*self.Inputs.C_star
+        predictions.u_pred = 0*self.Inputs.U_star
+        predictions.v_pred = 0*self.Inputs.V_star
+        predictions.p_pred = 0*self.Inputs.P_star
 
+        T_star = np.tile(self.Inputs.t_star, (1,self.Inputs.N)).T
+        X_star = np.tile(self.Inputs.x_star, (1,self.Inputs.N))
+        Y_star = np.tile(self.Inputs.y_star, (1,self.Inputs.N))
+
+        for snap in range(0, self.Inputs.T):
+            t_test = T_star[:,snap:snap+1]
+            x_test = X_star[:,snap:snap+1]
+            y_test = Y_star[:,snap:snap+1]
+            
+            c_test = (self.Inputs.C_star.to_numpy())[:,snap:snap+1]
+            u_test = (self.Inputs.U_star.to_numpy())[:,snap:snap+1]
+            v_test = (self.Inputs.V_star.to_numpy())[:,snap:snap+1]
+            p_test = (self.Inputs.P_star.to_numpy())[:,snap:snap+1]
+
+            c_pred, u_pred, v_pred, p_pred = self.HFM.predict(t_test, x_test, y_test)
+
+            errors.error_c = relative_error(c_pred, c_test)
+            errors.error_u = relative_error(u_pred, u_test)
+            errors.error_v = relative_error(v_pred, v_test)
+            errors.error_p = relative_error(p_pred, p_test)
+            
+            (predictions.c_pred.to_numpy())[:,snap:snap+1] = c_pred
+            (predictions.u_pred.to_numpy())[:,snap:snap+1] = u_pred
+            (predictions.v_pred.to_numpy())[:,snap:snap+1] = v_pred
+            (predictions.p_pred.to_numpy())[:,snap:snap+1] = p_pred
+        
+        if(self.outputMAT):
+            os.chdir("/Users/akshay/Documents/GitHub/HFM-Pipeline/Results")
+            scipy.io.savemat('1_inlet_results_%s.mat' %(time.strftime('%d_%m_%Y')), {'C_pred':predictions.c_pred.to_numpy(), 'U_pred':predictions.u_pred.to_numpy(), 'V_pred':predictions.v_pred.to_numpy(), 'P_pred':predictions.p_pred.to_numpy()})
+            scipy.io.savemat('1_inlet_errors_%s.mat' %(time.strftime('%d_%m_%Y')), {'C_error': errors.error_c, 'U_error': errors.error_u, 'V_error': errors.error_v, 'P_error': errors.error_p})
+
+        return predictions, errors
     def mat2vtu(self, mesh_template=None, predictions: dict=None):
         if (mesh_template == None and predictions == None):
             if (self.mesh_temp == None): raise IOError("No mesh template to use! Try creating one first!")
@@ -470,7 +501,7 @@ class HFM:
                 [loss_value,
                  learning_rate_value] = hfm.sess.run([hfm.loss,
                                                        hfm.learning_rate], tf_dict)
-                print('It: %d, Loss: %.3e, Time: %.2fs, Running Time: %.2fh, Learnsing Rate: %.1e'
+                print('It: %d, Loss: %.3e, Time: %.2fs, Running Time: %.2fh, Learning Rate: %.1e'
                       %(it, loss_value, elapsed, running_time, learning_rate_value))
                 sys.stdout.flush()
                 start_time = time.time()
@@ -480,13 +511,12 @@ class HFM:
         
         tf_dict = {hfm.t_data_tf: t_test, hfm.x_data_tf: x_test, hfm.y_data_tf: y_test}
         
-        predictions = Predictions()
-        predictions.c_pred = hfm.sess.run(hfm.c_data_pred, tf_dict)
-        predictions.u_pred = hfm.sess.run(hfm.u_data_pred, tf_dict)
-        predictions.v_pred = hfm.sess.run(hfm.v_data_pred, tf_dict)
-        predictions.p_pred = hfm.sess.run(hfm.p_data_pred, tf_dict)
+        c_pred = hfm.sess.run(hfm.c_data_pred, tf_dict)
+        u_pred = hfm.sess.run(hfm.u_data_pred, tf_dict)
+        v_pred = hfm.sess.run(hfm.v_data_pred, tf_dict)
+        p_pred = hfm.sess.run(hfm.p_data_pred, tf_dict)
         
-        return predictions
+        return c_pred, u_pred, v_pred, p_pred
 
 def main():
     try:

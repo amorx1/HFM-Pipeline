@@ -5,13 +5,13 @@ import time
 
 class InputData:
     def __init__(input):
-        input.x_star = pd.DataFrame()#np.empty(33974,)
-        input.y_star = pd.DataFrame()#np.empty(33974,)
-        input.t_star = pd.DataFrame()#np.empty(251,)
-        input.C_star = pd.DataFrame()#np.empty(8527474)
-        input.U_star = pd.DataFrame()#np.empty(8527474)
-        input.V_star = pd.DataFrame()#np.empty(8527474)
-        input.P_star = pd.DataFrame()#np.empty(8527474)
+        input.x_star = pd.DataFrame()
+        input.y_star = pd.DataFrame()
+        input.t_star = pd.DataFrame()
+        input.C_star = pd.DataFrame()
+        input.U_star = pd.DataFrame()
+        input.V_star = pd.DataFrame()
+        input.P_star = pd.DataFrame()
         input.T = None
         input.N = None
 
@@ -78,11 +78,6 @@ class Predictions:
         preds.u_pred = pd.DataFrame()
         preds.v_pred = pd.DataFrame()
         preds.p_pred = pd.DataFrame()
-
-    def save2mat(preds):
-        scipy.io.savemat('/Results/pipeline_test_results_%s.mat' %(time.strftime('%d_%m_%Y')),
-        {'C_pred':preds.c_pred, 'U_pred':preds.u_pred, 'V_pred':preds.v_pred, 'P_pred':preds.p_pred})
-        return
 
 class Equations:
     def __init__(eqns):

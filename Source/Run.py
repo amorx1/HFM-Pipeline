@@ -2,6 +2,7 @@
 @author: Akshay Mor, Maziar Raissi
 """
 
+import logging
 import tensorflow as tf
 import numpy as np
 import scipy.io
@@ -15,37 +16,41 @@ from utilities import neural_net, Navier_Stokes_2D, \
 
 def main():
 
-    # change working directory to locate files to be read
-    try:
-        os.chdir("DATA/input_data")    # FOR TESTING ONLY
-    except:
-        print("Invalid directory")
+    # change working directory to locate .vtu files
+    os.chdir("DATA/input_data")
 
     # initialise the pipeline
-    p = Pipeline()
+    pipeline = Pipeline()
 
-    # training settings
-    p.batch_size = 10000
-    p.layers = [3] + 10*[4*50] + [4]
-    p.Pec = 1000000
-    p.Rey = 450
+    # pipeline settings
+    pipeline.useGPUAcceleration = True  # Note: GPU acceleration requires a CUDA-enabled NVidia GPU
+    pipeline.outputMAT = True
+
+    # model settings
+    pipeline.batch_size = 10000
+    pipeline.layers = [3] + 10*[4*50] + [4]
+    pipeline.Pec = 1000000
+    pipeline.Rey = 450
     
     # prepare all data
-    p.getFiles()
-    p.extractData()
-    p.Inputs.setTN()
-    p.TrainingData, p.Equations, p.TestData = p.Inputs.splitTrainTestEqns()
+    pipeline.getFiles()
+    pipeline.extractData()
+    pipeline.Inputs.setTN()
+    pipeline.TrainingData, pipeline.Equations, pipeline.TestData = pipeline.Inputs.splitTrainTestEqns()
 
-    # create model using data
-    p.model()
+    # create model inside Pipeline instance
+    pipeline.model()
 
     # train model
-    p.HFM.train(total_time = 12, learning_rate = 1e-3)
+    pipeline.HFM.train(total_time = 0.01, learning_rate = 1e-3)
 
-    # make predictions
-    p.Predictions = p.HFM.predict(p.TestData())
+    # make predictions and calculate errors
+    pipeline.Predictions, pipeline.Errors = pipeline.Predict()
 
-    # calculate errors
+    # os.chdir("/Users/akshay/Documents/GitHub/HFM-Pipeline/DATA/input_data")
+    # pipeline.createMeshTemplate()
+    # pipeline.writeVTU()
+
     print("Done")
     
     # # Training
@@ -55,31 +60,6 @@ def main():
     #             Pec = 100, Rey = 100)
         
     # model.train(total_time = 0.05, learning_rate=1e-3)
-    
-    # # Test Data
-    # snap = np.array([100])
-    # t_test = T_star[:,snap]
-    # x_test = X_star[:,snap]
-    # y_test = Y_star[:,snap]    
-    
-    # c_test = C_star[:,snap]
-    # u_test = U_star[:,snap]
-    # v_test = V_star[:,snap]
-    # p_test = P_star[:,snap]
-    
-    # # Prediction
-    # c_pred, u_pred, v_pred, p_pred = model.predict(t_test, x_test, y_test)
-    
-    # # Error
-    # error_c = relative_error(c_pred, c_test)
-    # error_u = relative_error(u_pred, u_test)
-    # error_v = relative_error(v_pred, v_test)
-    # error_p = relative_error(p_pred - np.mean(p_pred), p_test - np.mean(p_test))
-
-    # print('Error c: %e' % (error_c))
-    # print('Error u: %e' % (error_u))
-    # print('Error v: %e' % (error_v))
-    # print('Error p: %e' % (error_p))
     
     # ################# Save Data ###########################
     
@@ -121,4 +101,3 @@ def main():
  
 if __name__ == "__main__":
     main()
-  

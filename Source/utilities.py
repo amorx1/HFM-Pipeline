@@ -27,6 +27,8 @@ def tf_session():
 
 def relative_error(pred, exact):
     if type(pred) is np.ndarray:
+        if (max(exact) == 0.0 and min(exact) == 0.0):
+            pass
         return np.sqrt(np.mean(np.square(pred - exact))/np.mean(np.square(exact - np.mean(exact))))
     return tf.sqrt(tf.reduce_mean(tf.square(pred - exact))/tf.reduce_mean(tf.square(exact - tf.reduce_mean(exact))))
 

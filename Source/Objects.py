@@ -1,15 +1,17 @@
 import pandas as pd
 import numpy as np
+import scipy.io
+import time
 
 class InputData:
     def __init__(input):
-        input.x_star = pd.DataFrame()#np.empty(33974,)
-        input.y_star = pd.DataFrame()#np.empty(33974,)
-        input.t_star = pd.DataFrame()#np.empty(251,)
-        input.C_star = pd.DataFrame()#np.empty(8527474)
-        input.U_star = pd.DataFrame()#np.empty(8527474)
-        input.V_star = pd.DataFrame()#np.empty(8527474)
-        input.P_star = pd.DataFrame()#np.empty(8527474)
+        input.x_star = pd.DataFrame()
+        input.y_star = pd.DataFrame()
+        input.t_star = pd.DataFrame()
+        input.C_star = pd.DataFrame()
+        input.U_star = pd.DataFrame()
+        input.V_star = pd.DataFrame()
+        input.P_star = pd.DataFrame()
         input.T = None
         input.N = None
 
@@ -51,14 +53,15 @@ class InputData:
 
         # Test Data
         test = TestData()
-        snap = np.array([100])
-        test.t_test = T_star[:,snap]
-        test.x_test = X_star[:,snap]
-        test.y_test = Y_star[:,snap]    
-        test.c_test = (input.C_star.to_numpy())[:,snap]
-        test.u_test = (input.U_star.to_numpy())[:,snap]
-        test.v_test = (input.V_star.to_numpy())[:,snap]
-        test.p_test = (input.P_star.to_numpy())[:,snap]
+        for snap in range(0,input.T):
+            test.t_test = T_star[:,snap:snap+1]
+            test.x_test = X_star[:,snap:snap+1]
+            test.y_test = Y_star[:,snap:snap+1]
+            
+            test.c_test = (input.C_star.to_numpy())[:,snap:snap+1]
+            test.u_test = (input.U_star.to_numpy())[:,snap:snap+1]
+            test.v_test = (input.V_star.to_numpy())[:,snap:snap+1]
+            test.p_test = (input.P_star.to_numpy())[:,snap:snap+1]
 
         return train, eqns, test
 
@@ -71,16 +74,20 @@ class TrainingData:
 
 class Predictions:
     def __init__(preds):
-        preds.c_star = pd.DataFrame()
-        preds.u_star = pd.DataFrame()
-        preds.v_star = pd.DataFrame()
-        preds.p_star = pd.DataFrame()
+        preds.c_pred = pd.DataFrame()
+        preds.u_pred = pd.DataFrame()
+        preds.v_pred = pd.DataFrame()
+        preds.p_pred = pd.DataFrame()
 
 class Equations:
     def __init__(eqns):
         eqns.t_eqns = pd.DataFrame()
         eqns.x_eqns = pd.DataFrame()
         eqns.y_eqns = pd.DataFrame()
+        eqns.c_eqns = pd.DataFrame()
+        eqns.u_eqns = pd.DataFrame()
+        eqns.v_eqns = pd.DataFrame()
+        eqns.p_eqns = pd.DataFrame()
 
 class TestData:
     def __init__(test):
@@ -92,9 +99,15 @@ class TestData:
         test.v_test = pd.DataFrame()
         test.p_test = pd.DataFrame()
 
-    def __call__(test):
+    def get(test):
         return test.t_test, test.x_test, test.y_test
 
 class Errors:
     def __init__(errs):
-        errs.x = 1
+        errs.error_c = pd.DataFrame()
+        errs.error_u = pd.DataFrame()
+        errs.error_v = pd.DataFrame()
+        errs.error_p = pd.DataFrame()
+
+    def plot(errs):
+        return 

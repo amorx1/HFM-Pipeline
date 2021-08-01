@@ -47,6 +47,10 @@ def main():
     # make predictions and calculate errors
     pipeline.Predictions, pipeline.Errors = pipeline.Predict()
 
+    # os.chdir("/Users/akshay/Documents/GitHub/HFM-Pipeline/DATA/input_data")
+    # pipeline.createMeshTemplate()
+    # pipeline.writeVTU()
+
     print("Done")
     
     # # Training
@@ -97,4 +101,3 @@ def main():
  
 if __name__ == "__main__":
     main()
-  

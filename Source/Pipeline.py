@@ -338,10 +338,10 @@ class Pipeline:
 
             c_pred, u_pred, v_pred, p_pred = self.HFM.predict(t_test, x_test, y_test)
 
-            errors.error_c = relative_error(c_pred, c_test)
-            errors.error_u = relative_error(u_pred, u_test)
-            errors.error_v = relative_error(v_pred, v_test)
-            errors.error_p = relative_error(p_pred, p_test)
+            errors.error_c.loc[snap, "Error"] = relative_error(c_pred, c_test)
+            errors.error_u.loc[snap, "Error"] = relative_error(u_pred, u_test)
+            errors.error_v.loc[snap, "Error"] = relative_error(v_pred, v_test)
+            errors.error_p.loc[snap, "Error"] = relative_error(p_pred, p_test)
             
             (predictions.c_pred.to_numpy())[:,snap:snap+1] = c_pred
             (predictions.u_pred.to_numpy())[:,snap:snap+1] = u_pred
@@ -351,32 +351,32 @@ class Pipeline:
         if(self.outputMAT):
             os.chdir("/Users/akshay/Documents/GitHub/HFM-Pipeline/Results")
             scipy.io.savemat('1_inlet_results_%s.mat' %(time.strftime('%d_%m_%Y')), {'C_pred':predictions.c_pred.to_numpy(), 'U_pred':predictions.u_pred.to_numpy(), 'V_pred':predictions.v_pred.to_numpy(), 'P_pred':predictions.p_pred.to_numpy()})
-            scipy.io.savemat('1_inlet_errors_%s.mat' %(time.strftime('%d_%m_%Y')), {'C_error': errors.error_c, 'U_error': errors.error_u, 'V_error': errors.error_v, 'P_error': errors.error_p})
+            scipy.io.savemat('1_inlet_errors_%s.mat' %(time.strftime('%d_%m_%Y')), {'C_error': errors.error_c.to_numpy(), 'U_error': errors.error_u.to_numpy(), 'V_error': errors.error_v.to_numpy(), 'P_error': errors.error_p.to_numpy()})
 
         return predictions, errors
-    def mat2vtu(self, mesh_template=None, predictions: dict=None):
+    def writeVTU(self, mesh_template=None, predictions: dict=None):
+        os.chdir("/Users/akshay/Documents/GitHub/HFM-Pipeline/Results")
         if (mesh_template == None and predictions == None):
-            if (self.mesh_temp == None): raise IOError("No mesh template to use! Try creating one first!")
-            points = self.mesh_temp.points
-            output = pd.DataFrame(float)
-            for i in range(251):
-                output[:, 1,2] = pd.DataFrame(points)
-                output.loc[:, "Con"] = self.predictions["C_pred"][:,i]
-                output.loc[:, "Pres"] = self.predictions["P_pred"][:,i]
-                output.loc[:, "Vel"] = np.linalg.norm((np.concatenate(self.predictions["U_pred"], self.predictions["V_pred"], axis=1)), axis=1)
-                cells = mesh_template.cells
-                point_data = {
-                    "Con" : output.loc[:, "Con"],
-                    "Pres": output.loc[:, "Pres"],
-                    "Vel" : output.loc[:, "Con"]
-                }
-                mesh = meshio.Mesh(
-                    points,
-                    cells,
-                    point_data
-                )
-                mesh.write("_"+str(i)+".vtu")
-
+            if (self.Predictions != None):
+                if (self.mesh_temp == None): raise IOError("No mesh template to use! Try creating one first!")
+                points = self.mesh_temp.points
+                for i in range(251):
+                    output = pd.DataFrame(points)
+                    output.loc[:, "Con"] = self.Predictions.c_pred.iloc[:,i]
+                    output.loc[:, "Pres"] = self.Predictions.p_pred.iloc[:,i]
+                    # output.loc[:, "Vel"] = np.linalg.norm((np.concatenate(self.predictions["U_pred"], self.predictions["V_pred"], axis=1)), axis=1)
+                    cells = self.mesh_temp.cells
+                    point_data = {
+                        "Con" : output.loc[:, "Con"],
+                        "Pres": output.loc[:, "Pres"],
+                        #"Vel" : output.loc[:, "Vel"]
+                    }
+                    mesh = meshio.Mesh(
+                        points,
+                        cells,
+                        point_data
+                    )
+                    mesh.write("_"+str(i)+".vtu")
         # if mesh_template and predictions are provided
         else:
             return
@@ -507,9 +507,9 @@ class HFM:
                 start_time = time.time()
             it += 1
     
-    def predict(hfm, t_test, x_test, y_test):
+    def predict(hfm, t_star, x_star, y_star):
         
-        tf_dict = {hfm.t_data_tf: t_test, hfm.x_data_tf: x_test, hfm.y_data_tf: y_test}
+        tf_dict = {hfm.t_data_tf: t_star, hfm.x_data_tf: x_star, hfm.y_data_tf: y_star}
         
         c_pred = hfm.sess.run(hfm.c_data_pred, tf_dict)
         u_pred = hfm.sess.run(hfm.u_data_pred, tf_dict)

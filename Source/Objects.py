@@ -84,6 +84,10 @@ class Equations:
         eqns.t_eqns = pd.DataFrame()
         eqns.x_eqns = pd.DataFrame()
         eqns.y_eqns = pd.DataFrame()
+        eqns.c_eqns = pd.DataFrame()
+        eqns.u_eqns = pd.DataFrame()
+        eqns.v_eqns = pd.DataFrame()
+        eqns.p_eqns = pd.DataFrame()
 
 class TestData:
     def __init__(test):

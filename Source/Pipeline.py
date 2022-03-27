@@ -19,7 +19,10 @@ import sys
 import time
 import glob
 from Objects import *
-from utilities import numericalSort, relative_error, neural_net, mean_squared_error, Navier_Stokes_2D, tf_session
+from utilities import numericalSort, relative_error, neural_net, mean_squared_error, Navier_Stokes_2D, tf_session, HFM_Dir
+
+import tensorflow.compat.v1 as tf
+tf.disable_v2_behavior()
 
 class Pipeline:
 
@@ -68,10 +71,43 @@ class Pipeline:
             self.N = self.Inputs.x_star.shape[0]
         else: raise IOError("T and N already exist for this pipeline!")
     # Instantiate HFM object with existing input data
-    def model(self):
+    def model(self, model_type):
         if self.HFM == None:
             if (self.Inputs != None):
-                self.HFM = HFM(t_data=self.TrainingData.t_data, x_data=self.TrainingData.x_data, y_data=self.TrainingData.y_data, c_data=self.TrainingData.c_data, t_eqns=self.Equations.t_eqns, x_eqns=self.Equations.x_eqns, y_eqns=self.Equations.y_eqns, layers=self.layers, batch_size=self.batch_size, Pec=self.Pec, Rey=self.Rey)
+                if (model_type == "no_bcs"):
+                    self.HFM = HFM(t_data=self.TrainingData.t_data,
+                     x_data=self.TrainingData.x_data,
+                      y_data=self.TrainingData.y_data,
+                       c_data=self.TrainingData.c_data,
+                        t_eqns=self.Equations.t_eqns,
+                         x_eqns=self.Equations.x_eqns,
+                          y_eqns=self.Equations.y_eqns,
+                           layers=self.layers,
+                            batch_size=self.batch_size,
+                             Pec=self.Pec, Rey=self.Rey)
+                elif (model_type == "dirchlet"):
+                    self.HFM = HFM_Dir(
+                        t_data=self.TrainingData.t_data,
+                         x_data=self.TrainingData.x_data,
+                          y_data=self.TrainingData.y_data,
+                           c_data=self.TrainingData.c_data,
+                            p_data=self.TrainingData.p_data,
+                             t_eqns=self.Equations.t_eqns,
+                              x_eqns=self.Equations.x_eqns,
+                               y_eqns=self.Equations.y_eqns,
+                                t_inlet=self.TrainingData.t_inlet,
+                                 x_inlet=self.TrainingData.x_inlet,
+                                  y_inlet=self.TrainingData.y_inlet,
+                                   u_inlet=self.TrainingData.u_inlet,
+                                    v_inlet=self.TrainingData.v_inlet,
+                                     t_no_slip=self.TrainingData.t_no_slip,
+                                      x_no_slip=self.TrainingData.x_no_slip,
+                                       y_no_slip=self.TrainingData.y_no_slip,
+                                        layers=self.layers,
+                                         batch_size=self.batch_size,
+                                          Pec=7.5e6, Rey=2000)
+                else:
+                    self.HFM = None
             else:
                 raise IOError("HFM cannot be created without input data!")
         else:
@@ -79,12 +115,10 @@ class Pipeline:
     # Read and write input data to Inputs
     def extractData(self, fileNames=None):
         
-        # read files
+        # create empty dictionaries
         x_star = pd.DataFrame().astype(np.float)
         y_star = pd.DataFrame().astype(np.float)
         t_star = pd.DataFrame().astype(np.float)
-
-        # create empty dictionaries for C, U, V and P
         C_star = pd.DataFrame().astype(np.float)
         U_star = pd.DataFrame().astype(np.float)
         V_star = pd.DataFrame().astype(np.float)
@@ -149,13 +183,13 @@ class Pipeline:
     # creates a mesh template for the Pipeline object
     # pass in the array of filenames to pick one and use the coordinates and cell format as a template for an output mesh
     def createMeshTemplate(self):
-            if (self.fileNames[0].endswith('.vtu')):
-                self.mesh_temp = meshio.read(self.fileNames[0])
+        if (self.fileNames[0].endswith('.vtu')):
+            self.mesh_temp = meshio.read(self.fileNames[0])
 
-                # clear points data for the output mesh
-                self.mesh_temp.point_data = None
-            else:
-                raise IOError("Incorrect file type to create mesh template! Only .vtu files are supported at this time")
+            # clear points data for the output mesh
+            self.mesh_temp.point_data = None
+        else:
+            raise IOError("Incorrect file type to create mesh template! Only .vtu files are supported at this time")
     # returns to a variable, a mesh template with all the correct xy coordinates and cells; points_data is empty for filling
     def meshTemplate(self):
         if (self.fileNames[0].endswith('.vtu')):
@@ -354,6 +388,18 @@ class Pipeline:
             scipy.io.savemat('1_inlet_errors_%s.mat' %(time.strftime('%d_%m_%Y')), {'C_error': errors.error_c.to_numpy(), 'U_error': errors.error_u.to_numpy(), 'V_error': errors.error_v.to_numpy(), 'P_error': errors.error_p.to_numpy()})
 
         return predictions, errors
+
+    def plotErrors(self):
+            fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
+            plt.figure(figsize=(25, 20))
+            fig.suptitle('Errors for each Snapshot in Time')
+
+            ax1.scatter(np.linspace(1, 250, 1), self.Errors.error_p, color='purple')
+            ax2.scatter(np.linspace(1, 250, 1), self.Errors.error_c, color='green')
+            ax3.scatter(np.linspace(1, 125, 1), self.Errors.error_u, color='red')
+            ax4.scatter(np.linspace(1, 125, 1), self.Errors.error_v, color='cyan')
+
+
     def writeVTU(self, mesh_template=None, predictions: dict=None):
         os.chdir("/Users/akshay/Documents/GitHub/HFM-Pipeline/Results")
         if (mesh_template == None and predictions == None):
@@ -379,7 +425,7 @@ class Pipeline:
                     mesh.write("_"+str(i)+".vtu")
         # if mesh_template and predictions are provided
         else:
-            return
+            pass
 
 class HFM:
     # notational conventions
@@ -454,6 +500,10 @@ class HFM:
         hfm.train_op = hfm.optimizer.minimize(hfm.loss)
         
         hfm.sess = tf_session()
+        hfm.sess = tf_session()
+        hfm.saver = tf.train.Saver(keep_checkpoint_every_n_hours=0.016)
+        hfm.saver.save(hfm.sess, '/Users/akshay/Desktop')
+
         
     def train(hfm, total_time, learning_rate):
         
@@ -494,7 +544,7 @@ class HFM:
             
             hfm.sess.run([hfm.train_op], tf_dict)
             
-            # Print
+            # Print & save model
             if it % 10 == 0:
                 elapsed = time.time() - start_time
                 running_time += elapsed/3600.0
@@ -518,6 +568,28 @@ class HFM:
         
         return c_pred, u_pred, v_pred, p_pred
 
+# def mat2vtu(mesh_template, results_mat):
+
+#     points = mesh_template.points
+#     for i in range(251):
+#         output = pd.DataFrame(points)
+#         u = pd.DataFrame(data=results_mat["U_pred"][:,i], columns=['u'])
+#         v = pd.DataFrame(data=results_mat["V_pred"][:,i], columns=['v'])
+#         x = pd.concat([u, v], axis=1)
+#         output.loc[:, "Vel"] = np.linalg.norm(x, axis=1)
+#         # output.loc[:, "Vel"] = np.linalg.norm((np.concatenate(results_mat["U_pred"][:,i], results_mat["V_pred"][:,i], axis=0)), axis=1)
+#         cells = mesh_template.cells
+#         point_data = {
+#             "Vel" : output.loc[:, "Vel"]
+#         }
+#         mesh = meshio.Mesh(
+#             points,
+#             cells,
+#             point_data
+#         )
+#         os.chdir("/Users/akshay/Documents/GitHub/HFM-Pipeline/DATA/1_inlet results/V")
+#         mesh.write("_"+str(i)+".vtu")
+
 def main():
     try:
         os.chdir("DATA")    # FOR TESTING ONLY
@@ -525,8 +597,8 @@ def main():
         raise IOError("Invalid directory")
 
     mesh_template = meshio.read("misc/mesh_template.vtu")
-    results_mat = scipy.io.loadmat("training_120k_results_26_07_2021.mat")
-    #mat2vtu(mesh_template, results_mat)
+    results_mat = scipy.io.loadmat("/Users/akshay/Documents/GitHub/HFM-Pipeline/DATA/training_120k_results_26_07_2021.mat")
+    # mat2vtu(mesh_template, results_mat)
     # fNames = parse_args()["fileNames"]
     
     # if fNames:

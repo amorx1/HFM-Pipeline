@@ -13,6 +13,7 @@ from Pipeline import *
 from utilities import neural_net, Navier_Stokes_2D, \
                       tf_session, mean_squared_error, relative_error
 
+tf.disable_v2_behavior()
 
 def main():
 
@@ -23,7 +24,6 @@ def main():
     pipeline = Pipeline()
 
     # pipeline settings
-    pipeline.useGPUAcceleration = True  # Note: GPU acceleration requires a CUDA-enabled NVidia GPU
     pipeline.outputMAT = True
 
     # model settings
@@ -31,7 +31,7 @@ def main():
     pipeline.layers = [3] + 10*[4*50] + [4]
     pipeline.Pec = 1000000
     pipeline.Rey = 450
-    
+
     # prepare all data
     pipeline.getFiles()
     pipeline.extractData()
@@ -39,7 +39,7 @@ def main():
     pipeline.TrainingData, pipeline.Equations, pipeline.TestData = pipeline.Inputs.splitTrainTestEqns()
 
     # create model inside Pipeline instance
-    pipeline.model()
+    pipeline.model(model_type="no_bcs")
 
     # train model
     pipeline.HFM.train(total_time = 0.01, learning_rate = 1e-3)

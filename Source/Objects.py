@@ -39,6 +39,7 @@ class InputData:
         train.x_data = X_star[:, idx_t][idx_x,:].flatten()[:,None]
         train.y_data = Y_star[:, idx_t][idx_x,:].flatten()[:,None]
         train.c_data = (input.C_star.to_numpy())[:, idx_t][idx_x,:].flatten()[:,None]
+        train.u_data = (input.U_star.to_numpy())[:, idx_t][idx_x,:].flatten()[:,None]
 
 
         # Equations
@@ -66,11 +67,24 @@ class InputData:
         return train, eqns, test
 
 class TrainingData:
-    def __init__(train):
+    def __init__(train, bcs=False):
         train.t_data = pd.DataFrame()
         train.x_data = pd.DataFrame()
         train.y_data = pd.DataFrame()
         train.c_data = pd.DataFrame()
+        if (bcs):
+            train.u_data = pd.DataFrame()
+            train.t_inlet = train.t_data[(np.where(train.patch_ID == 2)) or (np.where(train.patch_ID == 3)) or (np.where(train.patch_ID == 4)) or (np.where(train.patch_ID == 5))][:, None]
+            train.x_inlet = train.x_data[(np.where(train.patch_ID == 2)) or (np.where(train.patch_ID == 3)) or (np.where(train.patch_ID == 4)) or (np.where(train.patch_ID == 5))][:, None]
+            train.y_inlet = train.y_data[(np.where(train.patch_ID == 2)) or (np.where(train.patch_ID == 3)) or (np.where(train.patch_ID == 4)) or (np.where(train.patch_ID == 5))][:, None]
+            train.u_inlet = train.u_data[(np.where(train.patch_ID == 2)) or (np.where(train.patch_ID == 3)) or (np.where(train.patch_ID == 4)) or (np.where(train.patch_ID == 5))][:, None]
+            train.v_inlet = train.v_data[(np.where(train.patch_ID == 2)) or (np.where(train.patch_ID == 3)) or (np.where(train.patch_ID == 4)) or (np.where(train.patch_ID == 5))][:, None]
+            train.t_no_slip = train.t_data[(np.where(train.patch_ID==1) or (np.where(train.patch_ID==7)))][:, None]
+            train.x_no_slip = train.x_data[(np.where(train.patch_ID==1) or (np.where(train.patch_ID==7)))][:, None]
+            train.y_no_slip = train.y_data[(np.where(train.patch_ID==1) or (np.where(train.patch_ID==7)))][:, None]
+            train.patch_ID = pd.DataFrame()
+        else:
+            return
 
 class Predictions:
     def __init__(preds):

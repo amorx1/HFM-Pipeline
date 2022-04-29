@@ -1,5 +1,5 @@
 """
-@author: Akshay Mor
+@author: Akshay Mor, Maziar Raissi
 """
 
 from re import X
@@ -867,25 +867,3 @@ class HFM(object):
         F_L = 0.5*np.sum(INT0.T+INT1.T, axis = 1)*d_theta # T x 1
             
         return F_D, F_L
-
-
-def main():
-    try:
-        os.chdir("DATA")    # FOR TESTING ONLY
-    except:
-        raise IOError("Invalid directory")
-
-    mesh_template = meshio.read("misc/mesh_template.vtu")
-    results_mat = scipy.io.loadmat("training_120k_results_26_07_2021.mat")
-    #mat2vtu(mesh_template, results_mat)
-    # fNames = parse_args()["fileNames"]
-    
-    # if fNames:
-    #     try:
-    #         generate_frame_arrays(fNames, "linear")
-
-    #     except:
-    #         raise RuntimeError("There was a problem rendering the results")
-
-if __name__ == "__main__":
-    main()

@@ -1,5 +1,5 @@
 """
-@author: Akshay Mor, Maziar Raissi
+@author: Akshay Mor
 """
 
 import tensorflow as tf

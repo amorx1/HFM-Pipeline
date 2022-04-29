@@ -2,12 +2,7 @@
 @author: Akshay Mor, Maziar Raissi
 """
 
-import logging
 import tensorflow as tf
-import numpy as np
-import scipy.io
-import time
-import sys
 import os
 from Pipeline import *
 from utilities import neural_net, Navier_Stokes_2D, \
@@ -16,42 +11,56 @@ from utilities import neural_net, Navier_Stokes_2D, \
 
 def main():
 
-    # change working directory to locate .vtu files
-    os.chdir("DATA/input_data")
+    # configure model options & parameters
+    options = {
+        "training": {
+            "mode": "curr",
+            "augment_loss_at": 5,
+            "sequence": [50, 100, 150, 200, 250]
+            },
+        "checkpoint_every": 50000,
+        "stop_early": 10,
+        "BCs": {
+            "no-slip": True,
+            "dirichlet": True
+                },
+        "lambdas": [1.0, 1.0, 1.0],
+        "batch_size": 10000,
+        "layers": [3] + 10*[4*50] + [4],
+        "Pec": 1500000,
+        "Rey": 450,
+        "output_mat": True,
+        "boundary_file_path": "/Users/akshay/Downloads/patchID.mat"
+    }
 
     # initialise the pipeline
-    pipeline = Pipeline()
-
-    # pipeline settings
-    pipeline.useGPUAcceleration = True  # Note: GPU acceleration requires a CUDA-enabled NVidia GPU
-    pipeline.outputMAT = True
-
-    # model settings
-    pipeline.batch_size = 10000
-    pipeline.layers = [3] + 10*[4*50] + [4]
-    pipeline.Pec = 1000000
-    pipeline.Rey = 450
+    pipeline = Pipeline(options=options)
     
+    # change working directory to locate .vtu files
+    os.chdir("/Users/akshay/Documents/GitHub/HFM-Pipeline/DATA/4-inlets-5of5")
+
     # prepare all data
     pipeline.getFiles()
     pipeline.extractData()
     pipeline.Inputs.setTN()
     pipeline.TrainingData, pipeline.Equations, pipeline.TestData = pipeline.Inputs.splitTrainTestEqns()
 
-    # create model inside Pipeline instance
+    # # create model inside Pipeline instance
     pipeline.model()
 
-    # train model
-    pipeline.HFM.train(total_time = 0.01, learning_rate = 1e-3)
+    # # train model
+    pipeline.Train(total_time = 0.01, learning_rate = 1e-3)
 
-    # make predictions and calculate errors
+    # # make predictions and calculate errors
     pipeline.Predictions, pipeline.Errors = pipeline.Predict()
 
-    # os.chdir("/Users/akshay/Documents/GitHub/HFM-Pipeline/DATA/input_data")
-    # pipeline.createMeshTemplate()
-    # pipeline.writeVTU()
+    os.chdir("/Users/akshay/Documents/GitHub/HFM-Pipeline/DATA/4-inlets-5of5")
 
-    print("Done")
+    # create mesh and write data
+    pipeline.createMeshTemplate()
+    pipeline.writeVTU()
+
+    # print("Done")
     
     # # Training
     # model = HFM(t_data, x_data, y_data, c_data,

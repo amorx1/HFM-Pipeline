@@ -3,11 +3,7 @@
 """
 
 import tensorflow as tf
-import numpy as np
-import pandas as pd
-import meshio
-import os
-import glob
+1import numpy as np
 import re
 
 numbers = re.compile(r'(\d+)')
@@ -97,7 +93,8 @@ class neural_net(object):
 
 def Navier_Stokes_2D(c, u, v, p, t, x, y, Pec, Rey):
     
-    Y = tf.concat([c, u, v, p], 1)
+    d = 1-c
+    Y = tf.concat([c, d, u, v, p], 1)
     
     Y_t = fwd_gradients(Y, t)
     Y_x = fwd_gradients(Y, x)
@@ -106,38 +103,45 @@ def Navier_Stokes_2D(c, u, v, p, t, x, y, Pec, Rey):
     Y_yy = fwd_gradients(Y_y, y)
     
     c = Y[:,0:1]
-    u = Y[:,1:2]
-    v = Y[:,2:3]
-    p = Y[:,3:4]
+    d = Y[:,1:2]
+    u = Y[:,2:3]
+    v = Y[:,3:4]
+    p = Y[:,4:5]
     
     c_t = Y_t[:,0:1]
-    u_t = Y_t[:,1:2]
-    v_t = Y_t[:,2:3]
+    d_t = Y_t[:,1:2]
+    u_t = Y_t[:,2:3]
+    v_t = Y_t[:,3:4]
     
     c_x = Y_x[:,0:1]
-    u_x = Y_x[:,1:2]
-    v_x = Y_x[:,2:3]
-    p_x = Y_x[:,3:4]
+    d_x = Y_x[:,1:2]
+    u_x = Y_x[:,2:3]
+    v_x = Y_x[:,3:4]
+    p_x = Y_x[:,4:5]
     
     c_y = Y_y[:,0:1]
-    u_y = Y_y[:,1:2]
-    v_y = Y_y[:,2:3]
-    p_y = Y_y[:,3:4]
+    d_y = Y_y[:,1:2]
+    u_y = Y_y[:,2:3]
+    v_y = Y_y[:,3:4]
+    p_y = Y_y[:,4:5]
     
     c_xx = Y_xx[:,0:1]
-    u_xx = Y_xx[:,1:2]
-    v_xx = Y_xx[:,2:3]
+    d_xx = Y_xx[:,1:2]
+    u_xx = Y_xx[:,2:3]
+    v_xx = Y_xx[:,3:4]
     
     c_yy = Y_yy[:,0:1]
-    u_yy = Y_yy[:,1:2]
-    v_yy = Y_yy[:,2:3]
+    d_yy = Y_yy[:,1:2]
+    u_yy = Y_yy[:,2:3]
+    v_yy = Y_yy[:,3:4]
     
     e1 = c_t + (u*c_x + v*c_y) - (1.0/Pec)*(c_xx + c_yy)
-    e2 = u_t + (u*u_x + v*u_y) + p_x - (1.0/Rey)*(u_xx + u_yy) 
-    e3 = v_t + (u*v_x + v*v_y) + p_y - (1.0/Rey)*(v_xx + v_yy)
-    e4 = u_x + v_y
+    e2 = d_t + (u*d_x + v*d_y) - (1.0/Pec)*(d_xx + d_yy)
+    e3 = u_t + (u*u_x + v*u_y) + p_x - (1.0/Rey)*(u_xx + u_yy) 
+    e4 = v_t + (u*v_x + v*v_y) + p_y - (1.0/Rey)*(v_xx + v_yy)
+    e5 = u_x + v_y
     
-    return e1, e2, e3, e4
+    return e1, e2, e3, e4, e5
 
 def Gradient_Velocity_2D(u, v, x, y):
     
